@@ -1,0 +1,56 @@
+$kind: http-request
+url: "{{baseUrl}}/driver/:id"
+method: GET
+pathVariables:
+  id: "{{driverID}}"
+auth:
+  type: jwt
+  credentials:
+    isSecretBase64Encoded: true
+    secret: "{{jwtSecret}}"
+    algorithm: HS256
+    payload: "{}"
+    addTokenTo: header
+    headerPrefix: Bearer
+    queryParamKey: token
+    header: "{}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Driver profile response is properly formed", function () {
+          const schema = {
+              "type": "object",
+              "properties": {
+                  "profileId": { "type": "string" },
+                  "driver": {
+                      "type": "object",
+                      "properties": {
+                          "firstName": { "type": "string" },
+                          "lastName": { "type": "string" },
+                          "license": {
+                              "type": "object",
+                              "properties": {
+                                  "issueDate": { "type": "string" },
+                                  "expiry": { "type": "string" },
+                                  "issuingState": { "type": "string" },
+                                  "restrictions": { "type": "array" }
+                              },
+                              "required": ["issueDate", "expiry", "issuingState", "restrictions"]
+                          },
+                          "email": { "type": "string" }
+                      },
+                      "required": ["firstName", "lastName", "license", "email"]
+                  },
+                  "safetyScore": { "type": "number" },
+                  "hardStops": { "type": "number" },
+                  "speeding": { "type": "number" },
+                  "nightDrives": { "type": "number" },
+                  "weather": { "type": "number" },
+                  "ignoredWarnings": { "type": "number" }
+              },
+              "required": ["profileId", "driver", "safetyScore"]
+          };
+          pm.response.to.have.jsonSchema(schema);
+      });
+    language: text/javascript
+order: 1000
